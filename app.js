@@ -165,7 +165,14 @@
       headers: authHeaders(),
       body: JSON.stringify({ title: title, url: url, tags: tags }),
     })
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (data) {
+            throw new Error(data.error || "保存に失敗しました（ステータス: " + res.status + "）");
+          });
+        }
+        return res.json();
+      })
       .then(function (bookmark) {
         bookmarks.unshift(bookmark);
         render();
@@ -178,7 +185,14 @@
       headers: authHeaders(),
       body: JSON.stringify({ title: title, url: url, tags: tags }),
     })
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().then(function (data) {
+            throw new Error(data.error || "更新に失敗しました（ステータス: " + res.status + "）");
+          });
+        }
+        return res.json();
+      })
       .then(function (updated) {
         var idx = bookmarks.findIndex(function (b) { return b.id === id; });
         if (idx !== -1) {
@@ -272,7 +286,7 @@
       })
       .catch(function (err) {
         console.error("Save failed:", err);
-        alert("保存に失敗しました");
+        alert(err.message || "保存に失敗しました");
       })
       .finally(function () {
         btnAdd.disabled = false;
