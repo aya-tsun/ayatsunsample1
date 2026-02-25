@@ -1,39 +1,79 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "bookmarks";
+  var API = "/api/bookmarks";
 
   // --- DOM Elements ---
-  const form = document.getElementById("bookmark-form");
-  const inputTitle = document.getElementById("input-title");
-  const inputUrl = document.getElementById("input-url");
-  const inputTags = document.getElementById("input-tags");
-  const btnAdd = document.getElementById("btn-add");
-  const searchInput = document.getElementById("search-input");
-  const bookmarkList = document.getElementById("bookmark-list");
-  const emptyMessage = document.getElementById("empty-message");
+  var form = document.getElementById("bookmark-form");
+  var inputTitle = document.getElementById("input-title");
+  var inputUrl = document.getElementById("input-url");
+  var inputTags = document.getElementById("input-tags");
+  var btnAdd = document.getElementById("btn-add");
+  var searchInput = document.getElementById("search-input");
+  var bookmarkList = document.getElementById("bookmark-list");
+  var emptyMessage = document.getElementById("empty-message");
 
   // --- State ---
-  let bookmarks = loadBookmarks();
-  let editingId = null;
+  var bookmarks = [];
+  var editingId = null;
 
-  // --- Storage ---
-  function loadBookmarks() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    } catch {
-      return [];
-    }
+  // --- API calls ---
+  function fetchBookmarks() {
+    return fetch(API)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        bookmarks = data;
+        render();
+      })
+      .catch(function (err) {
+        console.error("Failed to load bookmarks:", err);
+      });
   }
 
-  function saveBookmarks() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+  function createBookmark(title, url, tags) {
+    return fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title, url: url, tags: tags }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (bookmark) {
+        bookmarks.unshift(bookmark);
+        render();
+      });
+  }
+
+  function updateBookmark(id, title, url, tags) {
+    return fetch(API + "/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title, url: url, tags: tags }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (updated) {
+        var idx = bookmarks.findIndex(function (b) { return b.id === id; });
+        if (idx !== -1) {
+          bookmarks[idx].title = updated.title;
+          bookmarks[idx].url = updated.url;
+          bookmarks[idx].tags = updated.tags;
+        }
+        render();
+      });
+  }
+
+  function deleteBookmark(id) {
+    return fetch(API + "/" + id, {
+      method: "DELETE",
+    }).then(function () {
+      bookmarks = bookmarks.filter(function (b) { return b.id !== id; });
+      render();
+    });
   }
 
   // --- Rendering ---
-  function render(filter) {
-    const query = (filter ?? searchInput.value).toLowerCase().trim();
-    const filtered = bookmarks.filter(function (b) {
+  function render() {
+    var query = searchInput.value.toLowerCase().trim();
+    var filtered = bookmarks.filter(function (b) {
       if (!query) return true;
       return (
         b.title.toLowerCase().includes(query) ||
@@ -76,36 +116,6 @@
     return div.innerHTML;
   }
 
-  // --- CRUD ---
-  function addBookmark(title, url, tags) {
-    var bookmark = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      title: title,
-      url: url,
-      tags: tags,
-      createdAt: new Date().toISOString(),
-    };
-    bookmarks.unshift(bookmark);
-    saveBookmarks();
-    render();
-  }
-
-  function updateBookmark(id, title, url, tags) {
-    var idx = bookmarks.findIndex(function (b) { return b.id === id; });
-    if (idx === -1) return;
-    bookmarks[idx].title = title;
-    bookmarks[idx].url = url;
-    bookmarks[idx].tags = tags;
-    saveBookmarks();
-    render();
-  }
-
-  function deleteBookmark(id) {
-    bookmarks = bookmarks.filter(function (b) { return b.id !== id; });
-    saveBookmarks();
-    render();
-  }
-
   // --- Event Handlers ---
   form.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -115,15 +125,28 @@
 
     if (!title || !url) return;
 
+    btnAdd.disabled = true;
+
+    var promise;
     if (editingId) {
-      updateBookmark(editingId, title, url, tags);
-      editingId = null;
-      btnAdd.textContent = "追加";
+      promise = updateBookmark(editingId, title, url, tags);
     } else {
-      addBookmark(title, url, tags);
+      promise = createBookmark(title, url, tags);
     }
 
-    form.reset();
+    promise
+      .then(function () {
+        editingId = null;
+        btnAdd.textContent = "追加";
+        form.reset();
+      })
+      .catch(function (err) {
+        console.error("Save failed:", err);
+        alert("保存に失敗しました");
+      })
+      .finally(function () {
+        btnAdd.disabled = false;
+      });
   });
 
   bookmarkList.addEventListener("click", function (e) {
@@ -165,5 +188,5 @@
   }
 
   // --- Init ---
-  render();
+  fetchBookmarks();
 })();
