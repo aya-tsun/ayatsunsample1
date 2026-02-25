@@ -2,8 +2,23 @@
   "use strict";
 
   var API = "/api/bookmarks";
+  var TOKEN_KEY = "auth_token";
 
   // --- DOM Elements ---
+  var authSection = document.getElementById("auth-section");
+  var appSection = document.getElementById("app-section");
+  var authForm = document.getElementById("auth-form");
+  var authTitle = document.getElementById("auth-title");
+  var authEmail = document.getElementById("auth-email");
+  var authPassword = document.getElementById("auth-password");
+  var btnAuth = document.getElementById("btn-auth");
+  var authError = document.getElementById("auth-error");
+  var btnSwitchAuth = document.getElementById("btn-switch-auth");
+  var authSwitchText = document.getElementById("auth-switch-text");
+  var userInfo = document.getElementById("user-info");
+  var userEmailSpan = document.getElementById("user-email");
+  var btnLogout = document.getElementById("btn-logout");
+
   var form = document.getElementById("bookmark-form");
   var inputTitle = document.getElementById("input-title");
   var inputUrl = document.getElementById("input-url");
@@ -16,11 +31,121 @@
   // --- State ---
   var bookmarks = [];
   var editingId = null;
+  var isLoginMode = true;
+
+  // --- Auth helpers ---
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+  }
+
+  function setToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  function removeToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  }
+
+  function authHeaders() {
+    return { "Content-Type": "application/json", Authorization: "Bearer " + getToken() };
+  }
+
+  function parseJWT(token) {
+    try {
+      var parts = token.split(".");
+      var payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      while (payload.length % 4) payload += "=";
+      return JSON.parse(atob(payload));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function showApp(email) {
+    authSection.classList.add("hidden");
+    appSection.classList.remove("hidden");
+    userInfo.classList.remove("hidden");
+    userEmailSpan.textContent = email;
+    fetchBookmarks();
+  }
+
+  function showAuth() {
+    authSection.classList.remove("hidden");
+    appSection.classList.add("hidden");
+    userInfo.classList.add("hidden");
+    bookmarks = [];
+  }
+
+  // --- Auth Events ---
+  btnSwitchAuth.addEventListener("click", function () {
+    isLoginMode = !isLoginMode;
+    if (isLoginMode) {
+      authTitle.textContent = "ログイン";
+      btnAuth.textContent = "ログイン";
+      authSwitchText.textContent = "アカウントがない方は";
+      btnSwitchAuth.textContent = "新規登録";
+    } else {
+      authTitle.textContent = "新規登録";
+      btnAuth.textContent = "登録";
+      authSwitchText.textContent = "既にアカウントがある方は";
+      btnSwitchAuth.textContent = "ログイン";
+    }
+    authError.classList.add("hidden");
+  });
+
+  authForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var email = authEmail.value.trim();
+    var password = authPassword.value;
+
+    if (!email || !password) return;
+
+    btnAuth.disabled = true;
+    authError.classList.add("hidden");
+
+    var url = isLoginMode ? "/api/auth/login" : "/api/auth/register";
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: password }),
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          return { ok: res.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        if (!result.ok) {
+          authError.textContent = result.data.error || "エラーが発生しました";
+          authError.classList.remove("hidden");
+          return;
+        }
+        setToken(result.data.token);
+        authForm.reset();
+        showApp(result.data.email);
+      })
+      .catch(function () {
+        authError.textContent = "通信エラーが発生しました";
+        authError.classList.remove("hidden");
+      })
+      .finally(function () {
+        btnAuth.disabled = false;
+      });
+  });
+
+  btnLogout.addEventListener("click", function () {
+    removeToken();
+    showAuth();
+  });
 
   // --- API calls ---
   function fetchBookmarks() {
-    return fetch(API)
-      .then(function (res) { return res.json(); })
+    return fetch(API, { headers: authHeaders() })
+      .then(function (res) {
+        if (res.status === 401) { removeToken(); showAuth(); return []; }
+        return res.json();
+      })
       .then(function (data) {
         bookmarks = data;
         render();
@@ -33,7 +158,7 @@
   function createBookmark(title, url, tags) {
     return fetch(API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ title: title, url: url, tags: tags }),
     })
       .then(function (res) { return res.json(); })
@@ -46,7 +171,7 @@
   function updateBookmark(id, title, url, tags) {
     return fetch(API + "/" + id, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ title: title, url: url, tags: tags }),
     })
       .then(function (res) { return res.json(); })
@@ -64,6 +189,7 @@
   function deleteBookmark(id) {
     return fetch(API + "/" + id, {
       method: "DELETE",
+      headers: authHeaders(),
     }).then(function () {
       bookmarks = bookmarks.filter(function (b) { return b.id !== id; });
       render();
@@ -116,7 +242,7 @@
     return div.innerHTML;
   }
 
-  // --- Event Handlers ---
+  // --- Bookmark Event Handlers ---
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var title = inputTitle.value.trim();
@@ -188,5 +314,16 @@
   }
 
   // --- Init ---
-  fetchBookmarks();
+  var token = getToken();
+  if (token) {
+    var payload = parseJWT(token);
+    if (payload && payload.exp && payload.exp > Date.now() / 1000) {
+      showApp(payload.email);
+    } else {
+      removeToken();
+      showAuth();
+    }
+  } else {
+    showAuth();
+  }
 })();

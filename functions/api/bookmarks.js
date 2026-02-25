@@ -1,34 +1,37 @@
 export async function onRequestGet(context) {
-  const db = context.env.DB;
+  var userId = context.data.user.sub;
 
-  const { results } = await db
-    .prepare("SELECT id, title, url, tags, created_at as createdAt FROM bookmarks ORDER BY created_at DESC")
+  var { results } = await context.env.DB
+    .prepare("SELECT id, title, url, tags, created_at as createdAt FROM bookmarks WHERE user_id = ? ORDER BY created_at DESC")
+    .bind(userId)
     .all();
 
-  const bookmarks = results.map((row) => ({
-    ...row,
-    tags: JSON.parse(row.tags),
-  }));
+  var bookmarks = results.map(function (row) {
+    return { id: row.id, title: row.title, url: row.url, tags: JSON.parse(row.tags), createdAt: row.createdAt };
+  });
 
   return Response.json(bookmarks);
 }
 
 export async function onRequestPost(context) {
-  const body = await context.request.json();
-  const { title, url, tags } = body;
+  var userId = context.data.user.sub;
+  var body = await context.request.json();
+  var title = body.title;
+  var url = body.url;
+  var tags = body.tags;
 
   if (!title || !url) {
     return Response.json({ error: "title and url are required" }, { status: 400 });
   }
 
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const createdAt = new Date().toISOString();
-  const tagsJson = JSON.stringify(tags || []);
+  var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  var createdAt = new Date().toISOString();
+  var tagsJson = JSON.stringify(tags || []);
 
   await context.env.DB
-    .prepare("INSERT INTO bookmarks (id, title, url, tags, created_at) VALUES (?, ?, ?, ?, ?)")
-    .bind(id, title, url, tagsJson, createdAt)
+    .prepare("INSERT INTO bookmarks (id, user_id, title, url, tags, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(id, userId, title, url, tagsJson, createdAt)
     .run();
 
-  return Response.json({ id, title, url, tags: tags || [], createdAt }, { status: 201 });
+  return Response.json({ id: id, title: title, url: url, tags: tags || [], createdAt: createdAt }, { status: 201 });
 }

@@ -28,6 +28,122 @@ header h1 {
   color: #1a1a2e;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+#btn-logout {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #666;
+  transition: background 0.2s;
+}
+
+#btn-logout:hover {
+  background: #f0f0f0;
+}
+
+/* --- Auth --- */
+.auth-section {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 1.3rem;
+  color: #1a1a2e;
+}
+
+#auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#auth-form input {
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+
+#auth-form input:focus {
+  outline: none;
+  border-color: #4361ee;
+}
+
+#btn-auth {
+  padding: 10px;
+  background: #4361ee;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#btn-auth:hover {
+  background: #3a56d4;
+}
+
+#btn-auth:disabled {
+  background: #a0b0ee;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  color: #e53e3e;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+#btn-switch-auth {
+  background: none;
+  border: none;
+  color: #4361ee;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* --- Add Bookmark Form --- */
 .add-bookmark {
   background: #fff;
@@ -200,7 +316,7 @@ header h1 {
 }
 
 .empty-message.hidden {
-  display: none;
+  display: none !important;
 }
 
 /* --- Responsive --- */

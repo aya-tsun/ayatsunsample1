@@ -10,25 +10,49 @@
   <div class="container">
     <header>
       <h1>Bookmarks</h1>
+      <div id="user-info" class="user-info hidden">
+        <span id="user-email"></span>
+        <button id="btn-logout" type="button">ログアウト</button>
+      </div>
     </header>
 
-    <section class="add-bookmark">
-      <form id="bookmark-form">
-        <input type="text" id="input-title" placeholder="タイトル" required>
-        <input type="url" id="input-url" placeholder="https://example.com" required>
-        <input type="text" id="input-tags" placeholder="タグ（カンマ区切り）">
-        <button type="submit" id="btn-add">追加</button>
-      </form>
+    <!-- Auth Screen -->
+    <section id="auth-section" class="auth-section">
+      <div class="auth-card">
+        <h2 id="auth-title">ログイン</h2>
+        <form id="auth-form">
+          <input type="email" id="auth-email" placeholder="メールアドレス" required>
+          <input type="password" id="auth-password" placeholder="パスワード（6文字以上）" required minlength="6">
+          <button type="submit" id="btn-auth">ログイン</button>
+        </form>
+        <p id="auth-error" class="auth-error hidden"></p>
+        <p class="auth-switch">
+          <span id="auth-switch-text">アカウントがない方は</span>
+          <button type="button" id="btn-switch-auth">新規登録</button>
+        </p>
+      </div>
     </section>
 
-    <section class="search-section">
-      <input type="text" id="search-input" placeholder="ブックマークを検索...">
-    </section>
+    <!-- App Screen (hidden until logged in) -->
+    <div id="app-section" class="hidden">
+      <section class="add-bookmark">
+        <form id="bookmark-form">
+          <input type="text" id="input-title" placeholder="タイトル" required>
+          <input type="url" id="input-url" placeholder="https://example.com" required>
+          <input type="text" id="input-tags" placeholder="タグ（カンマ区切り）">
+          <button type="submit" id="btn-add">追加</button>
+        </form>
+      </section>
 
-    <section class="bookmarks-section">
-      <ul id="bookmark-list"></ul>
-      <p id="empty-message" class="empty-message">ブックマークがありません。上のフォームから追加してください。</p>
-    </section>
+      <section class="search-section">
+        <input type="text" id="search-input" placeholder="ブックマークを検索...">
+      </section>
+
+      <section class="bookmarks-section">
+        <ul id="bookmark-list"></ul>
+        <p id="empty-message" class="empty-message">ブックマークがありません。上のフォームから追加してください。</p>
+      </section>
+    </div>
   </div>
 
   <script src="app.js"></script>
