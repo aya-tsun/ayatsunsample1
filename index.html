@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ブックマークアプリ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bookmarks</h1>
+    </header>
+
+    <section class="add-bookmark">
+      <form id="bookmark-form">
+        <input type="text" id="input-title" placeholder="タイトル" required>
+        <input type="url" id="input-url" placeholder="https://example.com" required>
+        <input type="text" id="input-tags" placeholder="タグ（カンマ区切り）">
+        <button type="submit" id="btn-add">追加</button>
+      </form>
+    </section>
+
+    <section class="search-section">
+      <input type="text" id="search-input" placeholder="ブックマークを検索...">
+    </section>
+
+    <section class="bookmarks-section">
+      <ul id="bookmark-list"></ul>
+      <p id="empty-message" class="empty-message">ブックマークがありません。上のフォームから追加してください。</p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
