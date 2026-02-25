@@ -111,6 +111,10 @@
       body: JSON.stringify({ email: email, password: password }),
     })
       .then(function (res) {
+        var contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("サーバーからの応答が不正です（ステータス: " + res.status + "）。Cloudflareの設定（D1バインディング、環境変数）を確認してください");
+        }
         return res.json().then(function (data) {
           return { ok: res.ok, data: data };
         });
@@ -125,8 +129,8 @@
         authForm.reset();
         showApp(result.data.email);
       })
-      .catch(function () {
-        authError.textContent = "通信エラーが発生しました";
+      .catch(function (err) {
+        authError.textContent = err.message || "通信エラーが発生しました";
         authError.classList.remove("hidden");
       })
       .finally(function () {
